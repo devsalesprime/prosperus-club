@@ -6,6 +6,7 @@ interface ButtonProps extends HTMLMotionProps<"button"> {
   children: React.ReactNode;
   className?: string;
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
+  type?: "button" | "submit" | "reset";
 }
 
 export const Button: React.FC<ButtonProps> = ({ variant = 'primary', children, className, ...props }) => {
