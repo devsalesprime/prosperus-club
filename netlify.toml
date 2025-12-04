@@ -7,3 +7,9 @@
   targetPort = 3000
   port = 8888
   autoLaunch = false
+
+# SPA redirect - redirect all routes to index.html for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
