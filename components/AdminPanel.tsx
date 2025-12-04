@@ -28,7 +28,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const API_URL = 'https://prosperus-club.netlify.app/api';
+    const API_URL = 'http://localhost:3001/api';
 
     useEffect(() => {
         if (token) {
