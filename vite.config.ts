@@ -10,7 +10,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     base: '/prosperus-mentor-diagnosis/',
     define: {
-      // Polyfill para process.env.API_KEY funcionar no navegador
+      // Previne erro de "process is not defined" e injeta a chave
+      'process.env': {},
       'process.env.API_KEY': JSON.stringify(env.API_KEY)
     },
     server: {
