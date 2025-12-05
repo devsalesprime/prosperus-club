@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Logo } from './ui/Logo';
@@ -28,7 +29,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const API_URL = 'http://localhost:3001/api';
+    const API_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:3001/api' 
+        : '/prosperus-mentor-diagnosis/api';
 
     useEffect(() => {
         if (token) {

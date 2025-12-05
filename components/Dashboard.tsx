@@ -18,7 +18,6 @@ interface DashboardProps {
   initialModule?: string;
 }
 
-// ... (Tipos e Menu Structure mantidos iguais) ...
 // Tipos para Menu e Estrutura
 type MenuItem = {
   id: string;
@@ -102,10 +101,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [deliveryStatus, setDeliveryStatus] = useState<ModuleStatus>('todo');
 
   // --- BACKEND INTEGRATION ---
+  // Determina a URL base dependendo do ambiente
+  const API_BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3001/api' 
+    : '/prosperus-mentor-diagnosis/api';
+
   const saveToBackend = async (module: string, data: any) => {
       try {
           // Fire and forget (não bloqueia UI)
-          fetch('http://localhost:3001/api/submit', {
+          fetch(`${API_BASE_URL}/submit`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
