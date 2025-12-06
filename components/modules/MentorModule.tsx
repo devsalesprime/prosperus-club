@@ -465,6 +465,7 @@ const Step1: React.FC<StepProps<MentorData['step1']>> = ({ data, onUpdate, readO
             />
         </div>
 
+        {/* 
         {!readOnly && (
             <AIButton 
                 onClick={() => analyze(data.field4, 'Posicionamento e Pitch')} 
@@ -472,6 +473,7 @@ const Step1: React.FC<StepProps<MentorData['step1']>> = ({ data, onUpdate, readO
                 disabled={!data.field4} 
             />
         )}
+        */}
 
         <AIAnalysisModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} analysis={analysis} />
       </div>
@@ -582,6 +584,7 @@ const Step2: React.FC<StepProps<MentorData['step2']>> = ({ data, onUpdate, readO
                 )}
             </div>
             
+            {/*
             {!readOnly && data.moments.length > 0 && (
                  <div className="absolute bottom-4 left-0 right-0 flex justify-center">
                     <AIButton 
@@ -591,6 +594,7 @@ const Step2: React.FC<StepProps<MentorData['step2']>> = ({ data, onUpdate, readO
                     />
                  </div>
             )}
+            */}
         </div>
 
         <AIAnalysisModal isOpen={isAIModalOpen} onClose={() => setIsAIModalOpen(false)} analysis={analysis} />
@@ -710,6 +714,7 @@ const Step3: React.FC<StepProps<MentorData['step3']>> = ({ data, onUpdate, readO
                 </div>
             </div>
 
+            {/*
             {!readOnly && (
                 <AIButton 
                     onClick={() => analyze(`Ouro: ${data.first}, Prata: ${data.second}, Bronze: ${data.third}`, 'Conquistas e Autoridade')} 
@@ -717,6 +722,7 @@ const Step3: React.FC<StepProps<MentorData['step3']>> = ({ data, onUpdate, readO
                     disabled={!data.first} 
                 />
             )}
+            */}
             <AIAnalysisModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} analysis={analysis} />
         </div>
     );
@@ -776,6 +782,7 @@ const Step4: React.FC<StepProps<MentorData['step4']>> = ({ data, onUpdate, readO
                 ))}
             </div>
 
+            {/*
             {!readOnly && (
                 <AIButton 
                     onClick={() => analyze(`Missão: ${data.mission}, Visão: ${data.vision}, Valores: ${data.values}`, 'Cultura e Fundamentos')} 
@@ -783,6 +790,7 @@ const Step4: React.FC<StepProps<MentorData['step4']>> = ({ data, onUpdate, readO
                     disabled={!data.mission} 
                 />
             )}
+            */}
             <AIAnalysisModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} analysis={analysis} />
         </div>
     );

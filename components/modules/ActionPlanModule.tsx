@@ -203,6 +203,7 @@ export const ActionPlanModule: React.FC<ActionPlanProps> = ({ mentorData, mentee
                 Nossa IA vai analisar todas as suas respostas dos módulos anteriores e criar um diagnóstico estratégico personalizado.
             </p>
             
+            {/*
             {!hasEnoughData() ? (
                 <div className="bg-red-500/10 border border-red-500/30 p-4 rounded text-sm text-red-300 mb-6">
                     Você precisa preencher mais informações nos módulos de Fundação antes de gerar o plano.
@@ -215,6 +216,17 @@ export const ActionPlanModule: React.FC<ActionPlanProps> = ({ mentorData, mentee
                     Gerar Diagnóstico
                 </button>
             )}
+            */}
+            
+            <div className="bg-[#081e30] border border-white/10 p-4 rounded-lg text-sm text-gray-400 max-w-md">
+                <p className="flex items-center justify-center gap-2">
+                    <i className="bi bi-cone-striped text-[#CA9A43]"></i>
+                    Funcionalidade de IA temporariamente indisponível.
+                </p>
+                <p className="text-xs mt-2 text-gray-500">
+                    O diagnóstico completo será liberado em breve. Por enquanto, foque em preencher os módulos de fundação.
+                </p>
+            </div>
         </div>
     );
 };
