@@ -29,7 +29,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const API_URL = '/api';
+const getApiUrl = () => {
+  // 1) Prioriza variável de ambiente (defina NEXT_PUBLIC_API_URL na sua hospedagem/build)
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  // 2) Se não existir, monta dinamicamente considerando o subpath onde a app está servida
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin;
+    // Ajuste aqui para o subpath real
+    const base = '/prosperus-mentor-diagnosis';
+    return `${origin}${base}/api`;
+  }
+  // Fallback para desenvolvimento
+  return '/prosperus-mentor-diagnosis/api';
+};
+const API_URL = getApiUrl();
 
     useEffect(() => {
         if (token) {
