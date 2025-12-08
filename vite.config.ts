@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     // Define a base como raiz absoluta para deploy em VPS
-    base: '/',
+    base: './',
     define: {
       // Injeta apenas a API Key de forma segura
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
