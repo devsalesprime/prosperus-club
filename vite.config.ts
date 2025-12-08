@@ -12,8 +12,7 @@ export default defineConfig(({ mode }) => {
     base: '/',
     define: {
       // Injeta a API Key e evita erros de "process is not defined"
-      'process.env.API_KEY': JSON.stringify(env.API_KEY),
-      'process.env': {}
+      'process.env.API_KEY': JSON.stringify(env.API_KEY)
     },
     build: {
       outDir: 'dist',
