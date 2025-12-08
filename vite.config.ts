@@ -11,9 +11,9 @@ export default defineConfig(({ mode }) => {
     // Define a base como raiz para deploy padrão em VPS
     base: '/',
     define: {
-      // Injeta a API Key e evita erros de "process is not defined"
+      // Injeta apenas a API Key de forma segura
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
-      'process.env': {}
+      // IMPORTANTE: Não sobrescrever process.env inteiro, pois quebra o React em produção
     },
     build: {
       outDir: 'dist',

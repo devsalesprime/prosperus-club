@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -16,9 +15,29 @@ const DB_FILE = path.join(__dirname, 'database.json');
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 
-// Servir arquivos estáticos do React (Build)
-// Assume que o comando 'npm run build' criou a pasta 'dist' na raiz do projeto
-app.use(express.static(path.join(__dirname, '../dist')));
+// Configuração robusta para servir arquivos estáticos
+// Usa path.resolve para garantir o caminho absoluto a partir de 'server/' para '../dist'
+const distPath = path.resolve(__dirname, '..', 'dist');
+
+console.log('------------------------------------------------');
+console.log(`Iniciando servidor Prosperus na porta ${PORT}`);
+console.log(`Servindo arquivos estáticos de: ${distPath}`);
+
+if (fs.existsSync(distPath)) {
+    console.log('Pasta dist encontrada com sucesso.');
+    const assetsPath = path.join(distPath, 'assets');
+    if (fs.existsSync(assetsPath)) {
+        console.log(`Conteúdo da pasta assets: ${fs.readdirSync(assetsPath).join(', ')}`);
+    } else {
+        console.warn('ALERTA: Pasta assets não encontrada dentro de dist.');
+    }
+} else {
+    console.error('ERRO CRÍTICO: Pasta dist não encontrada! Rode "npm run build".');
+}
+console.log('------------------------------------------------');
+
+// Serve a pasta dist como estática
+app.use(express.static(distPath));
 
 // --- DATABASE LAYER (Simulated for portability) ---
 const getDb = () => {
@@ -228,12 +247,17 @@ app.get('/api/admin/download/:email', authenticateToken, (req, res) => {
 // --- CATCH-ALL ROUTE FOR REACT SPA ---
 // Qualquer rota que não seja API retornará o index.html do React
 app.get('*', (req, res) => {
-    // Evita interceptar rotas de API que não deram match acima (opcional, mas boa prática)
+    // Evita interceptar rotas de API que não deram match acima
     if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: 'Endpoint não encontrado' });
     }
     
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send('Aplicação não encontrada. Verifique se o build foi executado (npm run build).');
+    }
 });
 
 app.listen(PORT, () => {
