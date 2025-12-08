@@ -6,65 +6,111 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 
 const app = express();
-// Permite que o VPS defina a porta (padrão 3001)
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'prosperus-super-secret-key-change-in-prod';
 const DB_FILE = path.join(__dirname, 'database.json');
 
-// Middleware
-app.use(cors());
-app.use(bodyParser.json({ limit: '50mb' }));
+// ============================================
+// MIDDLEWARE - ORDEM IMPORTANTE!
+// ============================================
 
-// Configuração robusta para servir arquivos estáticos
-// Usa path.resolve para garantir o caminho absoluto a partir de 'server/' para '../dist'
+// 1. CORS deve vir primeiro
+app.use(cors({
+    origin: '*', // Em produção, especifique seu domínio
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// 2. Body Parser
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// 3. Logger para debug
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    next();
+});
+
+// ============================================
+// CONFIGURAÇÃO DE ARQUIVOS ESTÁTICOS
+// ============================================
+
 const distPath = path.resolve(__dirname, '..', 'dist');
 
-console.log('------------------------------------------------');
-console.log(`Iniciando servidor Prosperus na porta ${PORT}`);
-console.log(`Servindo arquivos estáticos de: ${distPath}`);
+console.log('================================================');
+console.log(`🚀 Iniciando Servidor Prosperus na porta ${PORT}`);
+console.log(`📁 Servindo arquivos estáticos de: ${distPath}`);
 
 if (fs.existsSync(distPath)) {
-    console.log('Pasta dist encontrada com sucesso.');
+    console.log('✅ Pasta dist encontrada com sucesso.');
     const assetsPath = path.join(distPath, 'assets');
     if (fs.existsSync(assetsPath)) {
-        console.log(`Conteúdo da pasta assets: ${fs.readdirSync(assetsPath).join(', ')}`);
+        const files = fs.readdirSync(assetsPath);
+        console.log(`📦 Conteúdo da pasta assets (${files.length} arquivos)`);
     } else {
-        console.warn('ALERTA: Pasta assets não encontrada dentro de dist.');
+        console.warn('⚠️  ALERTA: Pasta assets não encontrada dentro de dist.');
     }
 } else {
-    console.error('ERRO CRÍTICO: Pasta dist não encontrada! Rode "npm run build".');
+    console.error('❌ ERRO CRÍTICO: Pasta dist não encontrada! Execute "npm run build".');
 }
-console.log('------------------------------------------------');
+console.log('================================================\n');
 
-// Serve a pasta dist como estática
-app.use(express.static(distPath));
+// Serve arquivos estáticos (DEPOIS das rotas de API)
+// Não coloque isso aqui, vai ficar no final!
 
-// --- DATABASE LAYER (Simulated for portability) ---
+// ============================================
+// DATABASE LAYER
+// ============================================
+
 const getDb = () => {
     if (!fs.existsSync(DB_FILE)) {
         fs.writeFileSync(DB_FILE, JSON.stringify({ submissions: [] }));
     }
-    return JSON.parse(fs.readFileSync(DB_FILE));
+    try {
+        return JSON.parse(fs.readFileSync(DB_FILE));
+    } catch (e) {
+        console.error('Erro ao ler database:', e);
+        return { submissions: [] };
+    }
 };
 
 const saveDb = (data) => {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+    try {
+        fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+        return true;
+    } catch (e) {
+        console.error('Erro ao salvar database:', e);
+        return false;
+    }
 };
 
-// --- AUTH MIDDLEWARE ---
+// ============================================
+// AUTH MIDDLEWARE
+// ============================================
+
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.sendStatus(401);
+    
+    if (!token) {
+        console.log('❌ Token não fornecido');
+        return res.status(401).json({ error: 'Token não fornecido' });
+    }
 
     jwt.verify(token, SECRET_KEY, (err, user) => {
-        if (err) return res.sendStatus(403);
+        if (err) {
+            console.log('❌ Token inválido:', err.message);
+            return res.status(403).json({ error: 'Token inválido' });
+        }
         req.user = user;
         next();
     });
 };
 
-// --- UTILS: TXT REPORT GENERATOR ---
+// ============================================
+// UTILS: TXT REPORT GENERATOR
+// ============================================
+
 const generateTxtReport = (sub) => {
     const divider = "================================================================\n";
     const subDivider = "----------------------------------------------------------------\n";
@@ -160,24 +206,50 @@ const generateTxtReport = (sub) => {
     return txt;
 };
 
-// --- ROUTES ---
+// ============================================
+// API ROUTES - TODAS AS ROTAS DE API DEVEM VIR ANTES DO CATCH-ALL!
+// ============================================
+
+// Health Check (útil para monitoramento)
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        distExists: fs.existsSync(distPath)
+    });
+});
 
 // 1. Admin Login
 app.post('/api/auth/login', (req, res) => {
+    console.log('🔑 Tentativa de login:', req.body.email);
+    
     const { email, password } = req.body;
-    // Hardcoded for MVP security. In real app, use bcrypt and DB.
+    
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email e senha são obrigatórios' });
+    }
+    
+    // Hardcoded para MVP. Em produção, use bcrypt e database.
     if (email === 'admin@prosperus.com' && password === 'admin123') {
-        const token = jwt.sign({ role: 'admin' }, SECRET_KEY, { expiresIn: '12h' });
-        res.json({ token });
+        const token = jwt.sign({ role: 'admin', email }, SECRET_KEY, { expiresIn: '12h' });
+        console.log('✅ Login bem-sucedido');
+        return res.json({ token, message: 'Login realizado com sucesso' });
     } else {
-        res.status(401).json({ error: 'Credenciais inválidas' });
+        console.log('❌ Credenciais inválidas');
+        return res.status(401).json({ error: 'Email ou senha incorretos' });
     }
 });
 
 // 2. Save User Data (Upsert)
 app.post('/api/submit', (req, res) => {
     const { email, name, module, data } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email required' });
+    
+    console.log('💾 Salvando dados:', { email, name, module, dataSize: JSON.stringify(data).length });
+    
+    if (!email) {
+        return res.status(400).json({ error: 'Email é obrigatório' });
+    }
 
     const db = getDb();
     let submission = db.submissions.find(s => s.userEmail === email);
@@ -186,34 +258,45 @@ app.post('/api/submit', (req, res) => {
         submission = {
             id: Date.now().toString(),
             userEmail: email,
-            userName: name,
+            userName: name || 'Sem Nome',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            // Placeholders for modules
             mentorData: null,
             menteeData: null,
             methodData: null,
             deliveryData: null
         };
         db.submissions.push(submission);
+        console.log('➕ Nova submissão criada');
+    } else {
+        console.log('🔄 Atualizando submissão existente');
     }
 
     // Update specific module data
     submission.updatedAt = new Date().toISOString();
-    submission.userName = name; // Update name in case it changed
+    submission.userName = name || submission.userName;
+    
     if (module === 'mentor') submission.mentorData = data;
     if (module === 'mentee') submission.menteeData = data;
     if (module === 'method') submission.methodData = data;
     if (module === 'delivery') submission.deliveryData = data;
 
-    saveDb(db);
-    res.json({ success: true, message: 'Dados salvos com sucesso.' });
+    const saved = saveDb(db);
+    
+    if (saved) {
+        console.log('✅ Dados salvos com sucesso');
+        res.json({ success: true, message: 'Dados salvos com sucesso' });
+    } else {
+        console.log('❌ Erro ao salvar dados');
+        res.status(500).json({ error: 'Erro ao salvar dados' });
+    }
 });
 
 // 3. List Submissions (Admin Only)
 app.get('/api/admin/submissions', authenticateToken, (req, res) => {
+    console.log('📋 Listando submissões (Admin)');
+    
     const db = getDb();
-    // Return summary only to save bandwidth
     const summary = db.submissions.map(s => ({
         id: s.id,
         userEmail: s.userEmail,
@@ -226,40 +309,94 @@ app.get('/api/admin/submissions', authenticateToken, (req, res) => {
             delivery: !!s.deliveryData
         }
     }));
+    
+    console.log(`✅ Retornando ${summary.length} submissões`);
     res.json(summary);
 });
 
 // 4. Download TXT (Admin Only)
 app.get('/api/admin/download/:email', authenticateToken, (req, res) => {
+    console.log('📥 Download solicitado para:', req.params.email);
+    
     const db = getDb();
     const submission = db.submissions.find(s => s.userEmail === req.params.email);
     
-    if (!submission) return res.status(404).send("Usuário não encontrado.");
+    if (!submission) {
+        console.log('❌ Usuário não encontrado');
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
 
-    const txtContent = generateTxtReport(submission);
-    
-    // Set headers for download
-    res.setHeader('Content-Disposition', `attachment; filename="diagnostico_${submission.userName.replace(/\s+/g, '_')}.txt"`);
-    res.setHeader('Content-Type', 'text/plain');
-    res.send(txtContent);
+    try {
+        const txtContent = generateTxtReport(submission);
+        const filename = `diagnostico_${submission.userName.replace(/\s+/g, '_')}.txt`;
+        
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.send(txtContent);
+        
+        console.log('✅ Download enviado com sucesso');
+    } catch (e) {
+        console.error('❌ Erro ao gerar relatório:', e);
+        res.status(500).json({ error: 'Erro ao gerar relatório' });
+    }
 });
 
-// --- CATCH-ALL ROUTE FOR REACT SPA ---
-// Qualquer rota que não seja API retornará o index.html do React
+// ============================================
+// ARQUIVOS ESTÁTICOS E CATCH-ALL (ÚLTIMO!)
+// ============================================
+
+// Serve arquivos estáticos da pasta dist
+app.use(express.static(distPath, {
+    index: false, // Não serve index.html automaticamente
+    dotfiles: 'ignore'
+}));
+
+// CATCH-ALL: Serve o React para qualquer rota não-API
+// IMPORTANTE: Esta rota DEVE ser a última!
 app.get('*', (req, res) => {
-    // Evita interceptar rotas de API que não deram match acima
+    // Se for rota de API que não existe, retorna 404
     if (req.path.startsWith('/api')) {
-        return res.status(404).json({ error: 'Endpoint não encontrado' });
+        console.log('❌ API endpoint não encontrado:', req.path);
+        return res.status(404).json({ 
+            error: 'API endpoint não encontrado',
+            path: req.path 
+        });
     }
     
+    // Serve o index.html para todas as outras rotas (React Router)
     const indexPath = path.join(distPath, 'index.html');
+    
     if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
     } else {
-        res.status(404).send('Aplicação não encontrada. Verifique se o build foi executado (npm run build).');
+        console.error('❌ index.html não encontrado em:', indexPath);
+        res.status(404).send(`
+            <h1>Aplicação não encontrada</h1>
+            <p>O arquivo index.html não foi encontrado em: ${indexPath}</p>
+            <p>Por favor, execute <code>npm run build</code> para compilar a aplicação.</p>
+        `);
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Prosperus Backend running on port ${PORT}`);
+// ============================================
+// ERROR HANDLER
+// ============================================
+
+app.use((err, req, res, next) => {
+    console.error('💥 Erro não tratado:', err);
+    res.status(500).json({ 
+        error: 'Erro interno do servidor',
+        message: err.message 
+    });
+});
+
+// ============================================
+// START SERVER
+// ============================================
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log('\n================================================');
+    console.log(`✅ Servidor Prosperus rodando na porta ${PORT}`);
+    console.log(`🌐 Acesse: http://localhost:${PORT}`);
+    console.log('================================================\n');
 });
