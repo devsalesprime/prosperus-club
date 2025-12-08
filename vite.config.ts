@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react' // ou o plugin que usa
+import react from '@vitejs/plugin-react' // remova se não usar React
 
 export default defineConfig({
-  // Ajuste base conforme deployment; './' para arquivos relativos (bom para arquivos locais/containers)
+  // Use './' para que os assets sejam referenciados de forma relativa
   base: './',
   plugins: [react()],
   build: {
-    outDir: 'dist'
+    outDir: 'dist',
+    sourcemap: false
   }
 })
