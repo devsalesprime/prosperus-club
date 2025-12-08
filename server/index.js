@@ -7,13 +7,18 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 
 const app = express();
-const PORT = 3001;
-const SECRET_KEY = 'prosperus-super-secret-key-change-in-prod';
+// Permite que o VPS defina a porta (padrão 3001)
+const PORT = process.env.PORT || 3001;
+const SECRET_KEY = process.env.SECRET_KEY || 'prosperus-super-secret-key-change-in-prod';
 const DB_FILE = path.join(__dirname, 'database.json');
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
+
+// Servir arquivos estáticos do React (Build)
+// Assume que o comando 'npm run build' criou a pasta 'dist' na raiz do projeto
+app.use(express.static(path.join(__dirname, '../dist')));
 
 // --- DATABASE LAYER (Simulated for portability) ---
 const getDb = () => {
@@ -220,6 +225,17 @@ app.get('/api/admin/download/:email', authenticateToken, (req, res) => {
     res.send(txtContent);
 });
 
+// --- CATCH-ALL ROUTE FOR REACT SPA ---
+// Qualquer rota que não seja API retornará o index.html do React
+app.get('*', (req, res) => {
+    // Evita interceptar rotas de API que não deram match acima (opcional, mas boa prática)
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'Endpoint não encontrado' });
+    }
+    
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
+
 app.listen(PORT, () => {
-    console.log(`Prosperus Backend running on http://localhost:${PORT}`);
+    console.log(`Prosperus Backend running on port ${PORT}`);
 });

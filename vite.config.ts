@@ -8,8 +8,8 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    // Define a base correta para a subpasta
-    base: '/prosperus-mentor-diagnosis/',
+    // Define a base como raiz para deploy padrão em VPS
+    base: '/',
     define: {
       // Injeta a API Key e evita erros de "process is not defined"
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
@@ -22,7 +22,13 @@ export default defineConfig(({ mode }) => {
       sourcemap: false
     },
     server: {
-      port: 3000
+      port: 3000,
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3001',
+          changeOrigin: true
+        }
+      }
     }
   }
 })

@@ -29,9 +29,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const API_URL = window.location.hostname === 'localhost' 
-        ? 'http://localhost:3001/api' 
-        : '/prosperus-mentor-diagnosis/api';
+    const API_URL = '/api';
 
     useEffect(() => {
         if (token) {

@@ -101,10 +101,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [deliveryStatus, setDeliveryStatus] = useState<ModuleStatus>('todo');
 
   // --- BACKEND INTEGRATION ---
-  // Determina a URL base dependendo do ambiente
-  const API_BASE_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:3001/api' 
-    : '/prosperus-mentor-diagnosis/api';
+  // Usa caminho relativo para funcionar tanto local quanto em produção
+  const API_BASE_URL = '/api';
 
   const saveToBackend = async (module: string, data: any) => {
       try {
