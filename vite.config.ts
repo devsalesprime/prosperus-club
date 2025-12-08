@@ -1,4 +1,3 @@
-// vite.config.ts
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -9,7 +8,8 @@ export default defineConfig(({ mode } ) => {
 
   return {
     plugins: [react()],
-    // A propriedade 'base' foi removida para usar caminhos relativos no build
+    // IMPORTANTE: Define a URL base para produção na subpasta correta
+    base: '/prosperus-mentor-diagnosis/',
     define: {
       // Previne erro de "process is not defined" e injeta a chave
       'process.env': {},
