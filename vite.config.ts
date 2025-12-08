@@ -8,17 +8,16 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    // Define a base como raiz para deploy padrão em VPS
-    base: './',
+    // Define a base como raiz absoluta para deploy em VPS
+    base: '/',
     define: {
       // Injeta apenas a API Key de forma segura
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
-      // IMPORTANTE: Não sobrescrever process.env inteiro, pois quebra o React em produção
     },
     build: {
       outDir: 'dist',
       assetsDir: 'assets',
-      emptyOutDir: true, // Garante que a pasta dist seja limpa antes do build
+      emptyOutDir: true,
       sourcemap: false
     },
     server: {
