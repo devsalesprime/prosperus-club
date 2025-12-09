@@ -1,23 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Logo } from './ui/Logo';
-
-interface SubmissionSummary {
-    id: string;
-    userEmail: string;
-    userName: string;
-    updatedAt: string;
-    progress: {
-        mentor: boolean;
-        mentee: boolean;
-        method: boolean;
-        delivery: boolean;
-    };
-}
-
-interface AdminPanelProps {
-    onLogout: () => void;
-}
+import React, { useEffect, useState } from 'react';
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     const [token, setToken] = useState<string | null>(localStorage.getItem('adminToken'));
@@ -26,7 +7,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     const [submissions, setSubmissions] = useState<SubmissionSummary[]>([]);
     const [loading, setLoading] = useState(false);
     
-    // Estados de erro e debug
     const [error, setError] = useState('');
     const [debugStatus, setDebugStatus] = useState('');
 
@@ -48,7 +28,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
             const endpoint = `${API_URL}/auth/login`;
             setDebugStatus(`Conectando em ${endpoint}...`);
             
-            // Timeout de 8s
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 8000);
 
@@ -58,13 +37,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({ email, password }),
+                // Ajuste: enviar username em vez de email para compatibilidade com server.cjs em produção
+                body: JSON.stringify({ username: email, password }),
                 signal: controller.signal
             });
             
             clearTimeout(timeoutId);
 
-            // Diagnóstico de resposta
             setDebugStatus(`Status HTTP: ${res.status}`);
             
             const contentType = res.headers.get("content-type");
@@ -75,7 +54,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
 
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
-                throw new Error(data.error || `Erro do servidor: ${res.status} ${res.statusText}`);
+                throw new Error(data.error || data.message || `Erro do servidor: ${res.status} ${res.statusText}`);
             }
 
             const data = await res.json();
