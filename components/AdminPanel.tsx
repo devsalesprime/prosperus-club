@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Logo } from './ui/Logo';
 import { motion } from 'framer-motion';
@@ -30,6 +29,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     const [error, setError] = useState('');
     const [debugStatus, setDebugStatus] = useState('');
 
+    // Ajuste dinâmico da URL base se necessário
     const API_URL = '/api';
 
     useEffect(() => {
@@ -48,6 +48,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
             const endpoint = `${API_URL}/auth/login`;
             setDebugStatus(`Conectando em ${endpoint}...`);
             
+            // Timeout de segurança de 8 segundos
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 8000);
 
@@ -57,28 +58,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                // Ajuste: enviar username em vez de email para compatibilidade com server.cjs em produção
-                body: JSON.stringify({ email: email, password }),
+                body: JSON.stringify({ email, password }),
                 signal: controller.signal
             });
             
             clearTimeout(timeoutId);
 
-            setDebugStatus(`Status HTTP: ${res.status}`);
+            setDebugStatus(`Resposta recebida (Status: ${res.status})`);
             
+            // Verificação crítica: O servidor devolveu JSON?
             const contentType = res.headers.get("content-type");
-            if (contentType && contentType.includes("text/html")) {
-                console.error("ERRO: Recebido HTML do servidor.");
-                throw new Error("O servidor retornou HTML (provável página de erro do Nginx ou SPA). O backend Node.js não processou a rota /api/auth/login corretamente.");
-            }
-
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data.error || data.message || `Erro do servidor: ${res.status} ${res.statusText}`);
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await res.text();
+                console.error("ERRO: Resposta não-JSON recebida:", text.substring(0, 100));
+                throw new Error("Erro de Configuração Nginx: O servidor retornou HTML em vez de JSON. Verifique se o proxy_pass para a porta 3001 está ativo no nginx.conf.");
             }
 
             const data = await res.json();
-            setDebugStatus('Sucesso! Redirecionando...');
+
+            if (!res.ok) {
+                throw new Error(data.error || data.message || `Erro do servidor: ${res.status}`);
+            }
+
+            setDebugStatus('Sucesso! Entrando...');
             
             setToken(data.token);
             localStorage.setItem('adminToken', data.token);
@@ -87,9 +89,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
             console.error('Erro Login:', err);
             
             if (err.name === 'AbortError') {
-                setError('O servidor demorou muito para responder. Verifique se o Node.js está rodando.');
+                setError('Timeout: O servidor Node.js (porta 3001) demorou muito para responder.');
             } else if (err.message.includes('Failed to fetch')) {
-                setError('Falha de conexão. O servidor backend parece estar desligado ou inacessível.');
+                setError('Erro de Conexão: Não foi possível conectar ao backend. Verifique sua internet ou se o servidor está online.');
             } else {
                 setError(err.message);
             }
@@ -105,12 +107,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             
-            const contentType = res.headers.get("content-type");
-            if (contentType && contentType.includes("text/html")) {
-                 console.error("Erro Proxy: Recebido HTML");
-                 return;
-            }
-
             if (res.ok) {
                 const data = await res.json();
                 setSubmissions(data);
@@ -190,7 +186,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                         
                         {error && (
                             <div className="bg-red-900/20 border border-red-500/50 p-4 rounded text-center">
-                                <p className="text-red-300 text-xs font-bold mb-1">{error}</p>
+                                <p className="text-red-200 text-xs font-bold mb-1"><i className="bi bi-exclamation-triangle-fill mr-1"></i> Erro no Login</p>
+                                <p className="text-red-300 text-[10px] leading-tight">{error}</p>
                             </div>
                         )}
                         
@@ -210,9 +207,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                         </button>
 
                         <div className="mt-4 pt-4 border-t border-white/5">
-                            <p className="text-[10px] text-gray-500 uppercase font-bold text-center mb-1">Diagnóstico de Conexão</p>
-                            <p className="text-xs text-center font-mono text-blue-400 truncate">
-                                {debugStatus || 'Aguardando...'}
+                            <p className="text-[10px] text-gray-500 uppercase font-bold text-center mb-1">Status Técnico</p>
+                            <p className="text-[10px] text-center font-mono text-blue-400 truncate">
+                                {debugStatus || 'Aguardando ação...'}
                             </p>
                         </div>
                     </form>
@@ -231,7 +228,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     <span className="text-[#CA9A43] font-bold uppercase tracking-widest text-xs">Painel Administrativo</span>
                 </div>
                 <div className="flex items-center gap-4">
-                    <button onClick={fetchSubmissions} className="text-gray-400 hover:text-white"><i className="bi bi-arrow-clockwise text-xl"></i></button>
+                    <button onClick={fetchSubmissions} className="text-gray-400 hover:text-white" title="Atualizar"><i className="bi bi-arrow-clockwise text-xl"></i></button>
                     <button onClick={handleLogoutLocal} className="text-red-400 hover:text-red-300 text-sm font-bold uppercase">Sair</button>
                 </div>
             </header>
