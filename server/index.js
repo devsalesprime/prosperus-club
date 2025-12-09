@@ -5,122 +5,134 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 3001; // Porta onde a API vai rodar
+const PORT = 3001;
 
-// Configurações de segurança e parser
-app.use(cors()); // Aceita requisições de qualquer origem (útil se frontend e backend estiverem em portas/domínios diferentes)
+// Configuração de Proxy para Nginx (importante para req.ip funcionar)
+app.set('trust proxy', 1);
+
+app.use(cors({
+    origin: '*', // Em produção, pode restringir ao seu domínio
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Log de requisições para debug
+// Log de todas as requisições para debug
 app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - IP: ${req.ip}`);
     next();
 });
 
-// Ignora favicon para não sujar logs
-app.get('/favicon.ico', (req, res) => res.status(204).end());
-
-// --- BANCO DE DADOS SIMULADO ---
+// --- DADOS SIMULADOS ---
 const ALLOWED_MEMBERS = [
     { email: 'admin@prosperus.com', name: 'Admin', role: 'admin' },
     { email: 'membro@teste.com', name: 'Membro Teste', role: 'member' }
 ];
 
-// --- HANDLERS (FUNÇÕES DE CONTROLE) ---
-// Separamos as funções para poder usar em múltiplas rotas (com e sem /api)
-
-const healthHandler = (req, res) => {
-    res.json({ status: 'Online', serverTime: new Date().toISOString() });
-};
+// --- HANDLERS ---
 
 const loginHandler = (req, res) => {
-    console.log('Tentativa de login:', req.body);
     const { email, password } = req.body;
+    console.log(`Tentativa de Login Admin: ${email}`);
+
+    // Forçar header JSON
+    res.setHeader('Content-Type', 'application/json');
 
     if (email === 'admin@prosperus.com' && password === 'admin123') {
-        console.log('Login SUCESSO');
         return res.json({ 
             success: true, 
             token: 'admin-secret-token-12345',
             user: { name: 'Administrador', email }
         });
     }
-
-    console.log('Login FALHA');
     return res.status(401).json({ error: 'Credenciais inválidas' });
 };
 
 const verifyMemberHandler = (req, res) => {
     const { email } = req.body;
-    console.log('Verificando membro:', email);
+    console.log(`Verificando membro: ${email}`);
     
-    // Procura na lista (case insensitive)
-    const member = ALLOWED_MEMBERS.find(m => m.email.toLowerCase() === (email || '').toLowerCase());
+    // Forçar header JSON
+    res.setHeader('Content-Type', 'application/json');
 
+    const member = ALLOWED_MEMBERS.find(m => m.email.toLowerCase() === (email || '').trim().toLowerCase());
+    
     if (member) {
         return res.json({ allowed: true, name: member.name });
     }
+    
+    // Fallback para permitir qualquer email em modo de teste/dev se necessário
+    // return res.json({ allowed: true, name: 'Visitante' }); 
     
     return res.json({ allowed: false, error: 'E-mail não encontrado na base de membros.' });
 };
 
 const submitHandler = (req, res) => {
-    // Apenas simula um salvamento com sucesso
-    // Aqui você conectaria com banco de dados real
-    console.log('Recebido submit do módulo:', req.body.module);
+    console.log('Recebendo submissão do módulo:', req.body.module);
     res.json({ success: true, message: 'Dados salvos com sucesso' });
 };
 
-// --- DEFINIÇÃO DE ROTAS (DUPLA CAMADA) ---
-// Define rotas COM e SEM /api para garantir compatibilidade com qualquer config de Nginx
+// --- ROTAS DA API ---
+// Definimos com E sem o prefixo /api para garantir que funcione
+// independente de como o Nginx rewrite a URL.
 
-// Health Check
-app.get('/api/health', healthHandler);
-app.get('/health', healthHandler);
-
-// Login Admin
+// Rota de Login
 app.post('/api/auth/login', loginHandler);
 app.post('/auth/login', loginHandler);
 
-// Verificação de Membro
+// Rota de Verificação de Membro
 app.post('/api/auth/verify-member', verifyMemberHandler);
 app.post('/auth/verify-member', verifyMemberHandler);
 
-// Submissão de Dados
+// Rota de Submissão de Dados
 app.post('/api/submit', submitHandler);
 app.post('/submit', submitHandler);
 
+// Health Check
+app.get('/api/health', (req, res) => res.json({ status: 'ok', server: 'node-express' }));
 
-// --- TRATAMENTO DE ERRO DE API (404 JSON) ---
-// Importante: Qualquer rota que comece com /api e não foi tratada acima deve retornar JSON 404,
-// e NÃO cair no fallback do React (HTML). Isso evita o erro "Unexpected token <".
+// --- TRATAMENTO DE ERROS DA API ---
+// Captura qualquer rota /api/* que não exista e retorna 404 JSON
+// Isso impede que o Nginx/React devolva index.html para chamadas de API erradas
 app.all('/api/*', (req, res) => {
-    console.warn(`[404 API] Rota não encontrada: ${req.url}`);
-    res.status(404).json({ error: `Endpoint API não encontrado: ${req.url}` });
+    res.status(404).json({ error: `Rota API não encontrada: ${req.url}` });
 });
 
-// --- SERVIR O FRONTEND (PRODUÇÃO) ---
+// --- SERVIR ARQUIVOS ESTÁTICOS (FRONTEND) ---
+// Em produção com Nginx, o Nginx serve os arquivos.
+// Mas se o Nginx falhar ou para teste local, o Node serve.
 const distPath = path.join(__dirname, '../dist');
+
 if (fs.existsSync(distPath)) {
-    console.log('📁 Servindo arquivos estáticos da pasta dist');
+    console.log(`✅ Pasta estática encontrada em: ${distPath}`);
     app.use(express.static(distPath));
-    
-    // SPA Fallback: Qualquer outra rota retorna o index.html
+
+    // Rota Catch-All para SPA (React)
+    // Qualquer rota que NÃO seja /api e NÃO seja arquivo estático cai aqui
     app.get('*', (req, res) => {
+        // Proteção extra: se parecer API, devolve erro JSON
+        if (req.url.startsWith('/api') || req.url.startsWith('/auth')) {
+             return res.status(404).json({ error: 'Endpoint não encontrado' });
+        }
+        
+        // Ignora favicon para limpar logs
+        if (req.url === '/favicon.ico') {
+            return res.status(204).end();
+        }
+
         res.sendFile(path.join(distPath, 'index.html'));
     });
 } else {
-    console.log('⚠️ Pasta dist não encontrada. Rodando apenas como API.');
-    app.get('/', (req, res) => {
-        res.send('Backend Prosperus rodando. Frontend não encontrado em ../dist');
-    });
+    console.log('⚠️ Pasta dist/ não encontrada. Rode "npm run build" se quiser servir o frontend pelo Node.');
+    app.get('/', (req, res) => res.send('Backend API rodando. Frontend não buildado.'));
 }
 
-// INICIAR SERVIDOR
+// --- INICIALIZAÇÃO ---
 app.listen(PORT, '0.0.0.0', () => {
-    console.log('==============================================');
-    console.log(`✅ SERVER RODANDO NA PORTA ${PORT}`);
-    console.log(`   Rotas API ativas em /api/... e /...`);
-    console.log('==============================================');
+    console.log('---------------------------------------------------');
+    console.log(`🚀 SERVER NODE.JS RODANDO NA PORTA ${PORT}`);
+    console.log(`👉 Teste Local: http://localhost:${PORT}/api/health`);
+    console.log('---------------------------------------------------');
 });
