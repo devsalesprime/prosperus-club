@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Logo } from './ui/Logo';
 import { motion } from 'framer-motion';
@@ -70,8 +71,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
             const contentType = res.headers.get("content-type");
             if (!contentType || !contentType.includes("application/json")) {
                 const text = await res.text();
-                console.error("ERRO: Resposta não-JSON recebida:", text.substring(0, 100));
-                throw new Error("Erro de Configuração Nginx: O servidor retornou HTML em vez de JSON. Verifique se o proxy_pass para a porta 3001 está ativo no nginx.conf.");
+                // console.error("ERRO: Resposta não-JSON recebida:", text.substring(0, 100)); // Removido log excessivo
+                throw new Error("ERRO DE INFRAESTRUTURA (NGINX): O servidor retornou HTML (provável 404/500) em vez de JSON. A rota /api não está chegando na porta 3001.");
             }
 
             const data = await res.json();
@@ -89,9 +90,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
             console.error('Erro Login:', err);
             
             if (err.name === 'AbortError') {
-                setError('Timeout: O servidor Node.js (porta 3001) demorou muito para responder.');
+                setError('TIMEOUT: O servidor Node.js (porta 3001) não respondeu a tempo. Ele está rodando?');
             } else if (err.message.includes('Failed to fetch')) {
-                setError('Erro de Conexão: Não foi possível conectar ao backend. Verifique sua internet ou se o servidor está online.');
+                setError('ERRO DE REDE: O navegador não conseguiu alcançar o servidor.');
             } else {
                 setError(err.message);
             }
@@ -186,8 +187,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                         
                         {error && (
                             <div className="bg-red-900/20 border border-red-500/50 p-4 rounded text-center">
-                                <p className="text-red-200 text-xs font-bold mb-1"><i className="bi bi-exclamation-triangle-fill mr-1"></i> Erro no Login</p>
-                                <p className="text-red-300 text-[10px] leading-tight">{error}</p>
+                                <p className="text-red-200 text-xs font-bold mb-1 flex items-center justify-center gap-2">
+                                    <i className="bi bi-exclamation-triangle-fill"></i> Erro no Login
+                                </p>
+                                <p className="text-red-300 text-[10px] leading-tight font-mono break-words">{error}</p>
                             </div>
                         )}
                         
@@ -207,7 +210,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                         </button>
 
                         <div className="mt-4 pt-4 border-t border-white/5">
-                            <p className="text-[10px] text-gray-500 uppercase font-bold text-center mb-1">Status Técnico</p>
+                            <p className="text-[10px] text-gray-500 uppercase font-bold text-center mb-1">Status de Conexão</p>
                             <p className="text-[10px] text-center font-mono text-blue-400 truncate">
                                 {debugStatus || 'Aguardando ação...'}
                             </p>
