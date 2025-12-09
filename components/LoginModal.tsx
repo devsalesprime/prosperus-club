@@ -23,8 +23,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   
-  // URL do Backend PHP para validação no HubSpot
-  const API_URL = 'https://salesprime.com.br/verify_member.php';
+  // Rota interna do Node.js. Não há mais dependência de PHP externo.
+  // A verificação é feita no server/index.js contra a lista ALLOWED_MEMBERS.
+  const API_URL = '/api/auth/verify-member';
 
   const handleCheckAccess = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +45,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-         throw new Error("O servidor retornou uma resposta inválida (não é JSON). Verifique o arquivo PHP.");
+         throw new Error("O servidor retornou uma resposta inválida. Tente novamente mais tarde.");
       }
 
       const data = await response.json();
@@ -73,8 +74,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
       console.error("Erro na verificação:", err);
       setStatus('error');
       
-      if (err.message && err.message.includes('Failed to fetch')) {
-        setErrorMessage('Erro de conexão. Verifique sua internet.');
+      if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
+        setErrorMessage('Erro de conexão. Verifique sua internet ou tente novamente.');
       } else {
         setErrorMessage(err.message || 'Ocorreu um erro ao validar seu acesso.');
       }
