@@ -45,13 +45,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
         setDebugStatus('Iniciando...');
         
         try {
-            setDebugStatus('Enviando requisição para /api/auth/login...');
+            const endpoint = `${API_URL}/auth/login`;
+            setDebugStatus(`Conectando em ${endpoint}...`);
             
-            // Timeout de 5s para não ficar carregando infinitamente
+            // Timeout de 8s
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-            const res = await fetch(`${API_URL}/auth/login`, {
+            const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -63,20 +64,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
             
             clearTimeout(timeoutId);
 
-            // VERIFICAÇÃO DE ERRO DE NGINX/PROXY
+            // Diagnóstico de resposta
+            setDebugStatus(`Status HTTP: ${res.status}`);
+            
             const contentType = res.headers.get("content-type");
             if (contentType && contentType.includes("text/html")) {
-                setDebugStatus("ERRO CRÍTICO: Servidor retornou HTML.");
-                throw new Error("O servidor retornou uma página HTML em vez de dados JSON. Isso significa que a rota /api não está alcançando o servidor Node.js (Porta 3001). Verifique se você rodou 'node server/index.js'.");
+                console.error("ERRO: Recebido HTML do servidor.");
+                throw new Error("O servidor retornou HTML (provável página de erro do Nginx ou SPA). O backend Node.js não processou a rota /api/auth/login corretamente.");
             }
 
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
-                throw new Error(data.error || `Erro do servidor: ${res.status}`);
+                throw new Error(data.error || `Erro do servidor: ${res.status} ${res.statusText}`);
             }
 
             const data = await res.json();
-            setDebugStatus('Sucesso! Entrando...');
+            setDebugStatus('Sucesso! Redirecionando...');
             
             setToken(data.token);
             localStorage.setItem('adminToken', data.token);
@@ -85,9 +88,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
             console.error('Erro Login:', err);
             
             if (err.name === 'AbortError') {
-                setError('Tempo esgotado. O backend parece estar desligado.');
+                setError('O servidor demorou muito para responder. Verifique se o Node.js está rodando.');
             } else if (err.message.includes('Failed to fetch')) {
-                setError('Falha de conexão. O backend não está rodando.');
+                setError('Falha de conexão. O servidor backend parece estar desligado ou inacessível.');
             } else {
                 setError(err.message);
             }
@@ -188,7 +191,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                         
                         {error && (
                             <div className="bg-red-900/20 border border-red-500/50 p-4 rounded text-center">
-                                <p className="text-red-300 text-xs font-bold">{error}</p>
+                                <p className="text-red-300 text-xs font-bold mb-1">{error}</p>
                             </div>
                         )}
                         
@@ -207,11 +210,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                             ) : 'Acessar Painel'}
                         </button>
 
-                        {/* Painel de Debug visível */}
                         <div className="mt-4 pt-4 border-t border-white/5">
-                            <p className="text-[10px] text-gray-500 uppercase font-bold text-center mb-1">Status da Conexão</p>
+                            <p className="text-[10px] text-gray-500 uppercase font-bold text-center mb-1">Diagnóstico de Conexão</p>
                             <p className="text-xs text-center font-mono text-blue-400 truncate">
-                                {debugStatus || 'Aguardando ação...'}
+                                {debugStatus || 'Aguardando...'}
                             </p>
                         </div>
                     </form>
