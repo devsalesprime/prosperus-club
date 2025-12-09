@@ -1,4 +1,24 @@
+
 import React, { useEffect, useState } from 'react';
+import { Logo } from './ui/Logo';
+import { motion } from 'framer-motion';
+
+interface AdminPanelProps {
+  onLogout: () => void;
+}
+
+interface SubmissionSummary {
+  id: string;
+  userEmail: string;
+  userName: string;
+  updatedAt: string;
+  progress: {
+    mentor: boolean;
+    mentee: boolean;
+    method: boolean;
+    delivery: boolean;
+  };
+}
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     const [token, setToken] = useState<string | null>(localStorage.getItem('adminToken'));
@@ -38,7 +58,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
                     'Accept': 'application/json'
                 },
                 // Ajuste: enviar username em vez de email para compatibilidade com server.cjs em produção
-                body: JSON.stringify({ username: email, password }),
+                body: JSON.stringify({ email: email, password }),
                 signal: controller.signal
             });
             
