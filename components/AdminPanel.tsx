@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Logo } from './ui/Logo';
@@ -27,22 +25,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onLogout }) => {
     const [password, setPassword] = useState('');
     const [submissions, setSubmissions] = useState<SubmissionSummary[]>([]);
     const [loading, setLoading] = useState(false);
+    
+    // Estados de erro e debug
     const [error, setError] = useState('');
+    const [debugStatus, setDebugStatus] = useState('');
 
-const getApiUrl = () => {
-  // 1) Prioriza variável de ambiente (defina NEXT_PUBLIC_API_URL na sua hospedagem/build)
-  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
-  // 2) Se não existir, monta dinamicamente considerando o subpath onde a app está servida
-  if (typeof window !== 'undefined') {
-    const origin = window.location.origin;
-    // Ajuste aqui para o subpath real
-    const base = '/prosperus-mentor-diagnosis';
-    return `${origin}${base}/api`;
-  }
-  // Fallback para desenvolvimento
-  return '/prosperus-mentor-diagnosis/api';
-};
-const API_URL = getApiUrl();
+    const API_URL = '/api';
 
     useEffect(() => {
         if (token) {
@@ -54,21 +42,55 @@ const API_URL = getApiUrl();
         e.preventDefault();
         setLoading(true);
         setError('');
+        setDebugStatus('Iniciando...');
+        
         try {
+            setDebugStatus('Enviando requisição para /api/auth/login...');
+            
+            // Timeout de 5s para não ficar carregando infinitamente
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
             const res = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ email, password }),
+                signal: controller.signal
             });
-            const data = await res.json();
-            if (res.ok) {
-                setToken(data.token);
-                localStorage.setItem('adminToken', data.token);
-            } else {
-                setError(data.error || 'Erro ao entrar');
+            
+            clearTimeout(timeoutId);
+
+            // VERIFICAÇÃO DE ERRO DE NGINX/PROXY
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.includes("text/html")) {
+                setDebugStatus("ERRO CRÍTICO: Servidor retornou HTML.");
+                throw new Error("O servidor retornou uma página HTML em vez de dados JSON. Isso significa que a rota /api não está alcançando o servidor Node.js (Porta 3001). Verifique se você rodou 'node server/index.js'.");
             }
-        } catch (err) {
-            setError('Erro de conexão com o servidor. Verifique se o backend está rodando.');
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || `Erro do servidor: ${res.status}`);
+            }
+
+            const data = await res.json();
+            setDebugStatus('Sucesso! Entrando...');
+            
+            setToken(data.token);
+            localStorage.setItem('adminToken', data.token);
+
+        } catch (err: any) {
+            console.error('Erro Login:', err);
+            
+            if (err.name === 'AbortError') {
+                setError('Tempo esgotado. O backend parece estar desligado.');
+            } else if (err.message.includes('Failed to fetch')) {
+                setError('Falha de conexão. O backend não está rodando.');
+            } else {
+                setError(err.message);
+            }
         } finally {
             setLoading(false);
         }
@@ -80,6 +102,13 @@ const API_URL = getApiUrl();
             const res = await fetch(`${API_URL}/admin/submissions`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.includes("text/html")) {
+                 console.error("Erro Proxy: Recebido HTML");
+                 return;
+            }
+
             if (res.ok) {
                 const data = await res.json();
                 setSubmissions(data);
@@ -144,6 +173,7 @@ const API_URL = getApiUrl();
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
                                 className="w-full bg-[#051522] border border-white/10 p-3 rounded text-white outline-none focus:border-[#CA9A43]"
+                                placeholder="admin@prosperus.com"
                             />
                         </div>
                         <div>
@@ -156,15 +186,34 @@ const API_URL = getApiUrl();
                             />
                         </div>
                         
-                        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+                        {error && (
+                            <div className="bg-red-900/20 border border-red-500/50 p-4 rounded text-center">
+                                <p className="text-red-300 text-xs font-bold">{error}</p>
+                            </div>
+                        )}
                         
                         <button 
                             type="submit" 
                             disabled={loading}
-                            className="w-full bg-[#CA9A43] text-[#031A2B] font-bold py-3 rounded hover:bg-[#FFE39B] transition-colors disabled:opacity-50"
+                            className={`w-full font-bold py-3 rounded transition-colors disabled:opacity-50 flex justify-center
+                                ${loading ? 'bg-gray-600 cursor-not-allowed' : 'bg-[#CA9A43] text-[#031A2B] hover:bg-[#FFE39B]'}
+                            `}
                         >
-                            {loading ? 'Entrando...' : 'Acessar Painel'}
+                            {loading ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-[#031A2B] border-t-transparent rounded-full animate-spin"></div>
+                                    <span>Conectando...</span>
+                                </div>
+                            ) : 'Acessar Painel'}
                         </button>
+
+                        {/* Painel de Debug visível */}
+                        <div className="mt-4 pt-4 border-t border-white/5">
+                            <p className="text-[10px] text-gray-500 uppercase font-bold text-center mb-1">Status da Conexão</p>
+                            <p className="text-xs text-center font-mono text-blue-400 truncate">
+                                {debugStatus || 'Aguardando ação...'}
+                            </p>
+                        </div>
                     </form>
                     <button onClick={onLogout} className="w-full mt-4 text-gray-500 text-xs hover:text-white">Voltar ao Site</button>
                 </motion.div>
