@@ -1,0 +1,70 @@
+/* 
+  Correções de Layout para Mobile e Navegador do Instagram
+  - Prevenção de overflow horizontal
+  - Ajuste de espaçamentos em telas pequenas
+  - Correção de tamanhos de elementos fixos
+*/
+
+/* Reset global para evitar overflow */
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Ajuste do Header para Mobile */
+header .container {
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+@media (max-width: 640px) {
+  header .container {
+    height: 4rem !important; /* Reduzir altura do header no mobile */
+  }
+  
+  header .w-40 {
+    width: 8rem !important; /* Reduzir logo no mobile */
+    height: auto !important;
+  }
+
+  header .gap-6 {
+    gap: 0.5rem !important;
+  }
+
+  header button.text-\[10px\] {
+    display: none; /* Esconder 'Área do Admin' em telas muito pequenas se necessário */
+  }
+}
+
+/* Ajuste do Hero para Mobile */
+@media (max-width: 768px) {
+  .font-serif.text-5xl {
+    font-size: 2.5rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  section.min-h-screen {
+    min-h-screen: auto !important;
+    padding-top: 6rem !important;
+    padding-bottom: 4rem !important;
+  }
+}
+
+/* Ajuste de Grids para Mobile */
+.grid {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Ajuste de Containers Elementor (se houver conflito com o site principal) */
+.elementor-section, .elementor-container {
+  max-width: 100vw !important;
+  overflow: hidden !important;
+}
+
+/* Correção específica para o navegador do Instagram (que às vezes ignora vh corretamente) */
+.min-h-screen {
+  min-height: 100vh; /* Fallback */
+  min-height: -webkit-fill-available;
+}

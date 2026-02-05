@@ -20,11 +20,11 @@ export const Hero: React.FC<HeroProps> = ({ onStartDiagnosis }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl leading-tight mb-6">
+          <h1 className="font-serif text-4xl sm:text-5xl md:text-7xl lg:text-8xl leading-tight mb-6">
             Construa Sua <br/>
             <span className="text-gold-gradient italic">Mentoria de 60k</span>
           </h1>
-          <p className="font-sans text-prosperus-neutral-grey text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-light">
+          <p className="font-sans text-prosperus-neutral-grey text-base md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-light px-4 md:px-0">
             Seu conhecimento vale muito. O caminho para seus primeiros 30 mentorados e entrada na MLS começa com esse diagnóstico.
           </p>
           

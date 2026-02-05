@@ -43,9 +43,32 @@
       }
     </script>
     <style>
+      html, body {
+        max-width: 100vw;
+        overflow-x: hidden;
+        position: relative;
+      }
       body {
         background-color: #031A2B;
         color: #FCF7F0;
+      }
+      /* Instagram Browser / Mobile Fixes */
+      @media (max-width: 640px) {
+        .container {
+          padding-left: 1.25rem !important;
+          padding-right: 1.25rem !important;
+        }
+        header .container {
+          height: 4.5rem !important;
+        }
+        .mobile-logo {
+          width: 120px !important;
+          height: auto !important;
+        }
+      }
+      .min-h-screen {
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
       }
       .text-gold-gradient {
         background: linear-gradient(135deg, #FFE39B 0%, #CA9A43 100%);

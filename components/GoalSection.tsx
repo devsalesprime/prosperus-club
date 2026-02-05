@@ -21,8 +21,8 @@ export const GoalSection: React.FC = () => {
             >
               <div className="text-center">
                 <p className="font-sans text-sm text-prosperus-neutral-grey uppercase tracking-widest mb-2">O Objetivo Final</p>
-                <div className="font-serif text-6xl md:text-8xl text-gold-gradient mb-2">30</div>
-                <p className="font-serif text-2xl text-white mb-6">Clientes High-Ticket de R$60k</p>
+                <div className="font-serif text-5xl md:text-8xl text-gold-gradient mb-2">30</div>
+                <p className="font-serif text-xl md:text-2xl text-white mb-6">Clientes High-Ticket de R$60k</p>
                 <div className="w-16 h-[1px] bg-prosperus-gold/50 mx-auto mb-6"></div>
                 <p className="font-sans text-prosperus-neutral-grey/80">
                   Qualificação mínima para o ecossistema<br/>

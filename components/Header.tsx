@@ -12,9 +12,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogin, onOpenAdmin }) => {
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#0B1426] backdrop-blur-md border-b border-white/5">
       <div className="container mx-auto px-6 h-20 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Logo className="w-40 h-40" />
+          <Logo className="w-32 h-32 md:w-40 md:h-40 mobile-logo" />
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 md:gap-6">
           {onOpenAdmin && (
             <button 
                 onClick={onOpenAdmin}
@@ -25,7 +25,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLogin, onOpenAdmin }) => {
           )}
           <Button 
             variant="outline" 
-            className="!py-2 !px-6 !text-xs" 
+            className="!py-2 !px-4 md:!px-6 !text-[10px] md:!text-xs whitespace-nowrap" 
             onClick={onOpenLogin}
           >
             Área do Membro
