@@ -6,6 +6,8 @@
 > Times: Tecnologia · CS · Sales OPS · Vendas
 > Infra: VPS Hostinger (Ubuntu 24.04 LTS, KVM 4 — 4 vCPU / 16 GB RAM)
 
+> ⚠️ **Leia junto com o complemento [Data Hub — v2](./data-hub-prosperus-v2.md)** (levantamento de 11/08/2026): boa parte das Fases 1 e 2 já existe em produção — pgvector, conectores MCP por pessoa, resolução de identidade — e a v2 move o ponto de partida deste plano, além de listar as 4 decisões da Fase 0 que precisam sair antes de qualquer código.
+
 ---
 
 ## 1. Objetivo
