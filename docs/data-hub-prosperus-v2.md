@@ -419,6 +419,8 @@ Implicações diretas no modelo de dados:
 O ganho que só existe com `cliente_id` único acima do produto: perguntas cruzadas como *"sócios do Club que evoluíram para o Exclusive — o que consumiram antes?"* e *"o comportamento no Club prevê sucesso no Exclusive?"*. É mais um reforço da decisão de Fase 0 sobre a tabela `clientes`.
 
 > Referência visual: protótipo v2.2 do Exclusive (artefato compartilhado no claude.ai). Os dados exibidos nele — trilha, marcos, progresso, conteúdo recomendado — são exatamente o payload que a API do Data Hub precisa servir.
+>
+> **Especificação completa derivada do protótipo** (levantamento navegável de 12/08/2026): [`data-hub-jornada-mentorado-spec.md`](./data-hub-jornada-mentorado-spec.md) — modelo de entidades (etapas, 10 movimentos, vendas, MLS, pendências de confirmação em dois passos), catálogo de eventos da `eventos_jornada` e payloads da API tela a tela.
 
 ---
 
