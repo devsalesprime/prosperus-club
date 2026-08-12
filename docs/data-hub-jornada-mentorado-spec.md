@@ -72,16 +72,23 @@ vendas              (id, cliente_id, produto, data, contratos int,
 -- DERIVADOS (view/job): receita_acumulada, ticket_medio,
 -- multiplo_roi = faturado/investido, pct_objetivo = contratos/meta
 
--- ── P3 · MLS ─────────────────────────────────────────────────────
+-- ── P3 · MLS (camada EXCLUSIVE — formação de mentores) ───────────
 -- MLS = Mentoring League Society: ecossistema de educação empresarial,
 -- networking e desenvolvimento para donos de empresas, liderado por
 -- Flávio Augusto, Joel Jota e Caio Carneiro — a Prosperus faz parte dele.
--- P3 mede a ENTRADA do mentorado nesse ecossistema (externo à Prosperus);
--- o ranking exibido "dentro" é a posição na liga.
-mls_status          (cliente_id, estado,             -- fora | dentro
-                     pct_criterio int,               -- 58
-                     ranking_posicao NULL,           -- só quando dentro (ex.: 41)
+-- P3 tem DUAS FASES conforme o estágio do mentorado:
+--   fase 1 · entrada  → critério: 30 mentorados pagantes, ticket médio
+--                       mínimo R$ 60k → pct_criterio é DERIVÁVEL das
+--                       vendas confirmadas (contratos ≥ ticket mínimo / 30)
+--   fase 2 · ranking  → após a entrada, acompanhamento da posição na liga
+mls_status          (cliente_id, fase,               -- entrada | ranking
+                     estado,                         -- fora | dentro
+                     pct_criterio int,               -- DERIVADO (ver nota abaixo)
+                     ranking_posicao NULL,           -- fase ranking (ex.: 41)
                      atualizado_por, atualizado_em)
+-- Nota: na demo, pct_criterio (58%) ≠ % do objetivo (33% = 10/30) — confirmar
+-- a fórmula exata (contam mentorados acumulados? ticket entra no cálculo?)
+-- antes de remover o override manual do CS.
 
 -- ── Sugestões e confirmações (dois passos) ───────────────────────
 sugestoes           (id, cliente_id, movimento_id, texto, prazo NULL,
@@ -221,12 +228,12 @@ POST /api/admin/mentorados/:id/log                     { texto }   → log compa
 
 ## 6. Divergências e decisões pendentes (do próprio protótipo)
 
-1. **Nomes de etapa divergem** entre a visão do mentorado e o admin (ex.: "Seu evento presencial" × "Evento do mentorado") — o catálogo precisa de `nome` + `nome_admin` ou padronização.
+1. **Nomes de etapa divergem** entre a visão do mentorado e o admin (ex.: "Seu evento presencial" × "Evento do mentorado") — *decisão adiada (12/08)*: padronização fica para depois; até lá o catálogo carrega `nome` + `nome_admin`.
 2. **Admin omite as etapas 6, 8 e 9** (contínuo/gatilho) — confirmar se são não-agendáveis por design.
-3. **Critério da MLS** — ✅ *contexto resolvido (12/08)*: MLS = **Mentoring League Society**, ecossistema de educação empresarial, networking e desenvolvimento para donos de empresas, liderado por Flávio Augusto, Joel Jota e Caio Carneiro, do qual a Prosperus faz parte. P3 mede a entrada do mentorado nesse ecossistema externo. **Segue em aberto**: a composição do % do critério (o que forma os 58%) — se os requisitos de entrada são formalizáveis, viram tabela `mls_criterios` com itens marcáveis; se são avaliação do CS, o % manual atual basta.
+3. **Critério da MLS** — ✅ *resolvido (12/08)*: MLS = **Mentoring League Society**, ecossistema de educação empresarial, networking e desenvolvimento para donos de empresas, liderado por Flávio Augusto, Joel Jota e Caio Carneiro, do qual a Prosperus faz parte. O critério de entrada é **30 mentorados pagantes com ticket médio mínimo de R$ 60k** — logo `pct_criterio` é **derivável das vendas confirmadas**, e a meta do ciclo é o próprio critério. P3 tem **duas fases** conforme o estágio do mentorado: *entrada* (progresso no critério) e, depois, *acompanhamento no ranking* da liga. Essa camada é **específica do Exclusive** (formação de mentores). *Detalhe residual*: na demo, 58% (MLS) ≠ 33% (objetivo = 10/30) — confirmar a fórmula exata antes de remover o override manual do CS.
 4. **Contrato de dados do log compartilhado** — o protótipo manda "alinhar com o Fábio"; é pré-requisito da tabela `log_interacoes`.
 5. **Escala do squad** — ✅ *resolvido (12/08)*: a escala real é **30 mentorados por ciclo** (a meta do ciclo); o "8 ativos" com 5 linhas era dado de demonstração. A tela Admin · Lista deve ser dimensionada para ~30 linhas por CS/squad, com a ordenação por atenção (sinal) fazendo o trabalho de priorização.
-6. **Versão Club**: este spec modela o Exclusive (9 etapas + 10 movimentos + MLS). O Club usa a mesma estrutura com **catálogos próprios** (marcos do CS de 12 meses; sem MLS?) — os catálogos por produto são exatamente o que as tabelas `*_catalogo` parametrizam. Confirmar com o RevOps o análogo Club de cada camada.
+6. **Versão Club** — *direção confirmada (12/08)*: esta mesma estrutura de jornada **será encaixada na jornada do Prosperus Club** em seguida. O Club usa os mesmos contêineres com **catálogos próprios** (marcos do CS de 12 meses no lugar das 9 etapas; movimentos próprios se fizer sentido) — é exatamente o que as tabelas `*_catalogo` por produto parametrizam. A camada P3/MLS **não se aplica ao Club** (é específica da formação de mentores do Exclusive); o P3 do Club, se existir, será outro indicador de resultado. Mapear com o RevOps o análogo Club de cada camada quando chegar a hora.
 
 ---
 
