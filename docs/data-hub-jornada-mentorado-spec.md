@@ -73,6 +73,11 @@ vendas              (id, cliente_id, produto, data, contratos int,
 -- multiplo_roi = faturado/investido, pct_objetivo = contratos/meta
 
 -- ── P3 · MLS ─────────────────────────────────────────────────────
+-- MLS = Mentoring League Society: ecossistema de educação empresarial,
+-- networking e desenvolvimento para donos de empresas, liderado por
+-- Flávio Augusto, Joel Jota e Caio Carneiro — a Prosperus faz parte dele.
+-- P3 mede a ENTRADA do mentorado nesse ecossistema (externo à Prosperus);
+-- o ranking exibido "dentro" é a posição na liga.
 mls_status          (cliente_id, estado,             -- fora | dentro
                      pct_criterio int,               -- 58
                      ranking_posicao NULL,           -- só quando dentro (ex.: 41)
@@ -218,9 +223,9 @@ POST /api/admin/mentorados/:id/log                     { texto }   → log compa
 
 1. **Nomes de etapa divergem** entre a visão do mentorado e o admin (ex.: "Seu evento presencial" × "Evento do mentorado") — o catálogo precisa de `nome` + `nome_admin` ou padronização.
 2. **Admin omite as etapas 6, 8 e 9** (contínuo/gatilho) — confirmar se são não-agendáveis por design.
-3. **Critério da MLS** é um % atualizado manualmente pelo CS — o critério em si (o que compõe os 58%) não está no protótipo; definir se vira tabela própria.
+3. **Critério da MLS** — ✅ *contexto resolvido (12/08)*: MLS = **Mentoring League Society**, ecossistema de educação empresarial, networking e desenvolvimento para donos de empresas, liderado por Flávio Augusto, Joel Jota e Caio Carneiro, do qual a Prosperus faz parte. P3 mede a entrada do mentorado nesse ecossistema externo. **Segue em aberto**: a composição do % do critério (o que forma os 58%) — se os requisitos de entrada são formalizáveis, viram tabela `mls_criterios` com itens marcáveis; se são avaliação do CS, o % manual atual basta.
 4. **Contrato de dados do log compartilhado** — o protótipo manda "alinhar com o Fábio"; é pré-requisito da tabela `log_interacoes`.
-5. **"8 ativos" × 5 linhas renderizadas** — placeholder do protótipo; sem impacto no schema.
+5. **Escala do squad** — ✅ *resolvido (12/08)*: a escala real é **30 mentorados por ciclo** (a meta do ciclo); o "8 ativos" com 5 linhas era dado de demonstração. A tela Admin · Lista deve ser dimensionada para ~30 linhas por CS/squad, com a ordenação por atenção (sinal) fazendo o trabalho de priorização.
 6. **Versão Club**: este spec modela o Exclusive (9 etapas + 10 movimentos + MLS). O Club usa a mesma estrutura com **catálogos próprios** (marcos do CS de 12 meses; sem MLS?) — os catálogos por produto são exatamente o que as tabelas `*_catalogo` parametrizam. Confirmar com o RevOps o análogo Club de cada camada.
 
 ---
