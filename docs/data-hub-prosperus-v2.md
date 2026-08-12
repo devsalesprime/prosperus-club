@@ -132,6 +132,23 @@ O custo não é de integração, é de capacidade: a Cloud API **não opera grup
 
 **Encaminhamento sugerido: híbrido explícito.** Evolution permanece para grupos e como arquivo histórico; números de CS migram um a um, com piloto de 30 dias. A biblioteca de regra de negócio do SLA (relógio comercial, detecção de disparo em massa, janelas offline, expressões leves) não se descarta — **porta-se a regra, troca-se a fonte do carimbo de tempo**.
 
+### 3.4 CIS Assessment — perfil comportamental *(adendo 12/08/2026)*
+
+Fonte adicionada ao escopo: **CIS Assessment**, operado como whitelabel em `perfil.salesprime.app`, monta o **perfil comportamental** dos leads/clientes. É o dado por trás de duas peças que já existem na jornada:
+
+- A etapa **"Devolutiva de perfil — análise comportamental"** (etapa 2 do Exclusive, antes da Dani);
+- O **perfil comportamental que o vendedor consulta antes/durante a reunião** (caso de uso §11.3) e a camada de autodiagnóstico da base do lead.
+
+| Aspecto | Encaminhamento |
+|---|---|
+| O que ingerir | Resultado estruturado por pessoa: perfil predominante, scores por fator, índices e data da avaliação — **os números, não só o PDF do relatório** |
+| Vínculo | Por e-mail → `cliente_id` (mesma chave da casa); um cliente pode ter múltiplas avaliações ao longo do tempo (histórico) |
+| Como integrar | Em ordem de preferência: (1) **API/webhook do whitelabel** ao concluir uma avaliação; (2) export periódico via sync-service; (3) MCP de consulta como complemento — bom para o conector das pessoas, mas o Data Hub precisa dos dados brutos persistidos |
+| Evento na jornada | `assessment_concluido` em `eventos_jornada` — a devolutiva de perfil passa a ter carimbo automático |
+| LGPD | Perfil comportamental é dado pessoal sensível na prática de uso: acesso restrito por perfil (vendedor vê o do próprio lead; sem exposição no app do sócio sem consentimento) |
+
+**Pendente:** verificar com o fornecedor do whitelabel quais opções de API/webhook/export existem e o formato do payload (a definir a tabela `perfis_comportamentais` em detalhe — esqueleto na spec da Jornada).
+
 ---
 
 ## 4. Modelo de dados central

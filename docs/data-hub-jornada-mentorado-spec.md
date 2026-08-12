@@ -104,6 +104,18 @@ trilha_aulas        (trilha_id, aula_id, posicao, concluida bool, concluida_em)
 -- modulos/aulas: derivados do catálogo de conteúdo por job (lessonId/videoId já existem)
 -- academy_eventos: play/progresso/conclusão por membro (ver Data Hub v2 §4.3)
 
+-- ── Perfil comportamental · CIS Assessment (whitelabel) ──────────
+-- Fonte: perfil.salesprime.app — alimenta a etapa "Devolutiva de perfil"
+-- e o dossiê do vendedor (§11.3 da v2). Formato exato do payload a
+-- confirmar com o fornecedor; esqueleto:
+perfis_comportamentais (id, cliente_id, avaliado_em,
+                     perfil_predominante,            -- ex.: perfil DISC/CIS
+                     scores jsonb,                   -- fatores e índices brutos
+                     relatorio_url NULL,             -- PDF da devolutiva
+                     metodologia_versao, origem)     -- whitelabel | import
+-- Histórico preservado: uma linha por avaliação (a pessoa pode refazer).
+-- Acesso restrito por perfil (LGPD): vendedor vê o do próprio lead.
+
 -- ── Log compartilhado e sinal interno ────────────────────────────
 log_interacoes      (id, cliente_id, data, autor, texto,
                      tipo)                           -- nota_interna | interacao | revisao
@@ -138,6 +150,7 @@ Todos com `cliente_id`, `produto`, `origem` (app | admin | sistema), `autor`, `t
 | CS | `interacao_registrada` | texto | Escreve no log compartilhado |
 | CS | `meta_ciclo_editada` | campos alterados | — |
 | Sistema | `derivados_recalculados` | métricas afetadas | ROI, score, streak, sinal |
+| Sistema | `assessment_concluido` | assessment_id, perfil_predominante | Via webhook/sync do CIS Assessment; carimba a etapa "Devolutiva de perfil" |
 
 Telemetria leve (expansão de card, clique em recomendação) vai para `academy_eventos`/telemetria, não para `eventos_jornada` — a linha do tempo guarda **fatos da jornada**, não cliques.
 
