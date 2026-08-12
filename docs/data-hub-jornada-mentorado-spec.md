@@ -105,16 +105,30 @@ trilha_aulas        (trilha_id, aula_id, posicao, concluida bool, concluida_em)
 -- academy_eventos: play/progresso/conclusão por membro (ver Data Hub v2 §4.3)
 
 -- ── Perfil comportamental · CIS Assessment (whitelabel) ──────────
--- Fonte: perfil.salesprime.app — alimenta a etapa "Devolutiva de perfil"
--- e o dossiê do vendedor (§11.3 da v2). Formato exato do payload a
--- confirmar com o fornecedor; esqueleto:
-perfis_comportamentais (id, cliente_id, avaliado_em,
-                     perfil_predominante,            -- ex.: perfil DISC/CIS
-                     scores jsonb,                   -- fatores e índices brutos
-                     relatorio_url NULL,             -- PDF da devolutiva
-                     metodologia_versao, origem)     -- whitelabel | import
--- Histórico preservado: uma linha por avaliação (a pessoa pode refazer).
--- Acesso restrito por perfil (LGPD): vendedor vê o do próprio lead.
+-- Fonte: perfil.salesprime.app (CIS Assessment). Levantado em 12/08/2026:
+-- SEM API pública/webhook de saída; caminho oficial = EXPORT XLSX/CSV
+-- (44 colunas, 1 linha por inventário respondido; ~5.492 no ambiente).
+-- Alimenta a etapa "Devolutiva de perfil" e o dossiê do vendedor (§11.3 da v2).
+perfis_comportamentais (
+  id, cliente_id,                       -- vínculo por E-MAIL (chave de negócio do CIS)
+  cis_inventory_id,                     -- id numérico estável do CIS (dedupe)
+  campanha,                             -- export "passport" (nome, não id)
+  perfil_disc,                          -- "discProfile" (40 códigos: D..CSI)
+  d_natural, i_natural, s_natural, c_natural,            -- 0–100
+  d_adaptado, i_adaptado, s_adaptado, c_adaptado,        -- 0–100
+  lideranca jsonb,                      -- executivo/motivador/metodico/sistematico (%)
+  valores jsonb,                        -- economico/politico/social/religioso/teorico/estetico
+  competencias jsonb,                   -- 16 subfatores (versão Natural, 0–100)
+  iniciado_em, concluido_em,            -- startDate/endDate (converter serial Excel!)
+  relatorio_detalhe jsonb NULL,         -- NÃO vem no export: Jung (ENF...), índices
+                                        -- (positividade/estima/flexibilidade 0–1),
+                                        -- Percepção/Exigência (+ por ambiente),
+                                        -- 24 pares bipolares — só no relatório/PDF
+  origem)                               -- export | manual
+-- Histórico: uma linha por inventário (a pessoa pode refazer em outra campanha).
+-- Ingestão: export periódico via sync-service (dedupe por cis_inventory_id).
+-- Acesso restrito por perfil (LGPD): vendedor vê o do próprio lead; gender/cpf
+-- vêm no export — ingerir apenas se houver uso definido (minimização).
 
 -- ── Log compartilhado e sinal interno ────────────────────────────
 log_interacoes      (id, cliente_id, data, autor, texto,

@@ -139,15 +139,20 @@ Fonte adicionada ao escopo: **CIS Assessment**, operado como whitelabel em `perf
 - A etapa **"Devolutiva de perfil — análise comportamental"** (etapa 2 do Exclusive, antes da Dani);
 - O **perfil comportamental que o vendedor consulta antes/durante a reunião** (caso de uso §11.3) e a camada de autodiagnóstico da base do lead.
 
-| Aspecto | Encaminhamento |
-|---|---|
-| O que ingerir | Resultado estruturado por pessoa: perfil predominante, scores por fator, índices e data da avaliação — **os números, não só o PDF do relatório** |
-| Vínculo | Por e-mail → `cliente_id` (mesma chave da casa); um cliente pode ter múltiplas avaliações ao longo do tempo (histórico) |
-| Como integrar | Em ordem de preferência: (1) **API/webhook do whitelabel** ao concluir uma avaliação; (2) export periódico via sync-service; (3) MCP de consulta como complemento — bom para o conector das pessoas, mas o Data Hub precisa dos dados brutos persistidos |
-| Evento na jornada | `assessment_concluido` em `eventos_jornada` — a devolutiva de perfil passa a ter carimbo automático |
-| LGPD | Perfil comportamental é dado pessoal sensível na prática de uso: acesso restrito por perfil (vendedor vê o do próprio lead; sem exposição no app do sócio sem consentimento) |
+**Levantamento do painel realizado em 12/08/2026** (conta Empresa; plataforma `CIS Assessment 1.4.5-beta.7`, backend interno `api.aws.cisassessment.com.br`):
 
-**Pendente:** verificar com o fornecedor do whitelabel quais opções de API/webhook/export existem e o formato do payload (a definir a tabela `perfis_comportamentais` em detalhe — esqueleto na spec da Jornada).
+| Aspecto | Resultado do levantamento |
+|---|---|
+| API / webhook de saída | **Não existem.** Sem menu de desenvolvedor, tokens ou webhook "avaliação concluída → sua URL". A API interna observada no tráfego não é documentada — integração direta seria não oficial e frágil |
+| Caminho oficial de ingestão | **Export XLSX/CSV** (testado): 1 linha por inventário respondido, **44 colunas** — id, name, email, gender, cpf, campanha (`passport`), `discProfile`, DISC Natural + Adaptado (0–100), 4 estilos de liderança, 6 valores, 16 competências (Natural), datas (serial Excel). ~5.492 respondidos no ambiente. **Sync-service importa periodicamente, dedupe pelo `id` do inventário** |
+| O que o export NÃO traz | Percepção/Exigência (geral e por ambiente), tipos psicológicos (Jung, ex. ENF), índices Positividade/Estima/Flexibilidade, textos do relatório e os 24 pares bipolares — só existem no relatório/PDF autenticado. Se forem necessários ao dossiê, é captura à parte (ou pedido de evolução ao CIS) |
+| Vínculo | **E-mail é a chave de negócio** (campo imutável do cadastro no CIS); IDs numéricos estáveis (`personId`, `passportId`, `inventoryId`) nas URLs. CPF existe mas frequentemente vazio |
+| Notificação de conclusão | Só para humanos (e-mail/WhatsApp: "Questionário respondido") — não serve de gatilho de sistema. Ingestão é batch |
+| Entrada automática | Webhooks de **venda** (Pagarme/Hotmart/Guru) disparam o envio do assessment por campanha — útil para automatizar o envio no fechamento, não para ler resultados |
+| Evento na jornada | `assessment_concluido` gerado pelo sync ao importar inventário novo — carimba a etapa "Devolutiva de perfil" (batch, não tempo real) |
+| LGPD | Export inclui `gender` e `cpf`: **ingerir só com uso definido** (minimização). Acesso restrito por perfil: vendedor vê o do próprio lead; sem exposição no app do sócio sem consentimento |
+
+Modelagem detalhada da tabela `perfis_comportamentais` (colunas promovidas + JSONB): na [spec da Jornada](./data-hub-jornada-mentorado-spec.md).
 
 ---
 
