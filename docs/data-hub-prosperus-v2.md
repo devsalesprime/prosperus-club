@@ -355,6 +355,73 @@ Onde os dois se encontram, e isso é ganho real: o ETL de conhecimento termina e
 
 ---
 
+## 11. Casos de uso do ecossistema *(adendo 12/08/2026)*
+
+O princípio que amarra tudo: **os dados moram uma vez no Postgres central; a IA chega neles por tools MCP (pessoas) e pela API (aplicações)**. Cada caso de uso abaixo é uma combinação diferente das mesmas peças — nenhum exige banco novo.
+
+### 11.1 Sócio no app — trilha, conteúdo e ROI
+
+*"Quais vídeos ou documentos ajudam o Sócio na trilha e na rotina para gerar ROI"*
+
+| Peça | Estado |
+|---|---|
+| Catálogo + grafo de dores→aulas (KB, 264 conteúdos) | ✅ Produção |
+| Trilha montada pelo CS por cliente | ✅ Produção (publicação de trilha) |
+| Molde do copiloto isolado por tenant | ✅ Produção — é o padrão para o mentor do Sócio |
+| **O que o Sócio já assistiu/concluiu** (`academy_eventos`) | ❌ **O elo que falta** — hoje o progresso de trilha mora no navegador dele (Anexo C) |
+
+Com `academy_eventos` + a trilha + o grafo da KB, o mentor responde: *"você está no marco 3 da sua trilha; a próxima aula recomendada para a sua dor é X"*. **ROI vira métrica**: consumo → marcos atingidos → resultado declarado nas reuniões (a Marvee já traz dor/objetivo/BANT).
+
+### 11.2 Desempenho do CS com os Sócios
+
+| Peça | Estado |
+|---|---|
+| SLA de primeira resposta (relógio comercial, piso 11/06) | ✅ Produção — absorver na Fase 1 |
+| Log de relacionamento (voz do CS → HubSpot Communications) | ✅ Produção |
+| Jornada de 12 meses com 11 marcos do CS | ✅ Documentada — reforça o **eixo duplo** da Fase 0 |
+| Linha do tempo por Sócio (`eventos_jornada` + `cliente_id`) | ❌ O que o Data Hub cria |
+
+O fluxo de desempenho vira consulta: por CS, a carteira de Sócios com marcos atingidos × prazo, SLA de resposta, engajamento no Academy e renovação/churn. Sai primeiro como tool (`consultar_sql` para a liderança), depois como dashboard.
+
+### 11.3 Vendedor antes e durante a reunião
+
+| Peça | Estado |
+|---|---|
+| Dossiê unificado em runtime (HubSpot + WhatsApp + Marvee + KB, com confiança) | ✅ Produção — closers já têm HubSpot/Marvee/Proposta no conector |
+| **Perfil comportamental**: autodiagnóstico (base do lead) + BANT/dor/direcionamento (Marvee) | ✅ Existe, espalhado |
+| Histórico persistido para "o que oferecer" (entregas × perfil) | ❌ Data Hub: com a jornada persistida, dá para responder *"clientes com esse perfil fecharam mais quando a oferta foi X"* |
+
+A tool `jornada_do_cliente(email)` é o "buscar sobre o cliente antes/durante a reunião" — e, com a Marvee transcrevendo a call, o passo seguinte natural é o copiloto sugerir entregas em tempo real com base no perfil + catálogo.
+
+### 11.4 O que os casos de uso mudam nas prioridades
+
+1. **Confirmam o eixo duplo** da `eventos_jornada` (funil + marcos CS) — o caso 11.2 não existe sem os marcos;
+2. **Confirmam `clientes` persistida** — os casos 11.2 e 11.3 são perguntas analíticas, impossíveis em runtime;
+3. **Sobem a instrumentação do Academy por membro de prioridade** — é pré-requisito dos casos 11.1 e 11.2, e resolve de quebra o progresso server-side que hoje não existe;
+4. O mentor do Sócio reusa o copiloto por tenant — não cria superfície nova.
+
+---
+
+## 12. Aplicativo da Jornada — Prosperus Club + Exclusive *(adendo 12/08/2026)*
+
+Está em desenvolvimento para o **Exclusive** o protótipo *"Academy · Jornada do Mentorado" (v2.2)*, e a mesma experiência será construída para o **Prosperus Club**: **um único aplicativo, com duas interfaces por sócio** — uma do Club e outra do Exclusive.
+
+Implicações diretas no modelo de dados:
+
+| Implicação | Como fica no schema |
+|---|---|
+| **Dimensão `produto`** (club \| exclusive) | O sócio pode estar nos dois. `cliente_id` é **único, acima do produto**; os vínculos ficam em tabela própria (ex.: `assinaturas` com produto, datas e status) |
+| **Trilhas e marcos por produto** | A jornada de 12 meses / 11 marcos do CS (Club) e a **Jornada Exclusive / Acelerador v5** (já documentada na base de processos) são eixos paralelos → `eventos_jornada` carrega `produto`, e o enum de marcos é semeado **por produto**, do mesmo jeito que o índice JSON da jornada |
+| **Consumo por interface** | `academy_eventos` registra de qual produto/interface veio o evento — o mesmo vídeo pode existir nos dois catálogos |
+| **Mentor IA único** | O copiloto por tenant serve as duas interfaces com o mesmo backend, mudando só o contexto de produto |
+| **API única** | Mesma API (REST/Edge Function) com escopo por produto — evita as "duas portas de entrada" contra as quais o §5.2 alerta |
+
+O ganho que só existe com `cliente_id` único acima do produto: perguntas cruzadas como *"sócios do Club que evoluíram para o Exclusive — o que consumiram antes?"* e *"o comportamento no Club prevê sucesso no Exclusive?"*. É mais um reforço da decisão de Fase 0 sobre a tabela `clientes`.
+
+> Referência visual: protótipo v2.2 do Exclusive (artefato compartilhado no claude.ai). Os dados exibidos nele — trilha, marcos, progresso, conteúdo recomendado — são exatamente o payload que a API do Data Hub precisa servir.
+
+---
+
 ## Anexo A — Ferramentas e serviços que já existem
 
 Inventário resumido do que está no ar e é relevante ao Data Hub.
@@ -435,3 +502,31 @@ Coisas que não estão no plano e que fazem um número parecer certo estando err
 4. O MCP do Data Hub é conector novo ou módulo do conector pessoal que cada um já tem?
 5. Qual o SLA de dado que o time precisa: tempo real por webhook, ou sync de hora em hora resolve? Isso muda a complexidade do sync-service em uma ordem de grandeza.
 6. Quem opera o Data Hub no dia a dia depois do go-live, e por qual runbook?
+
+---
+
+## Anexo E — Painel de conectores: levantamento *(print de 12/08/2026)*
+
+**16 registros** no painel: 14 conectores pessoais + 2 compartilhados (*Contexto Compartilhado* com Contexto/Trilha; *KB Prosperus* com kb). Módulos em uso: **HubSpot, Marvee, Proposta, WhatsApp, Varredura, Trilha, Contexto, kb**. Composição por função:
+
+| Perfil | Pessoas | Módulos hoje |
+|---|---|---|
+| Closers (6) | Bianca, Juliana Abduch, Mayara, Pâmela, Seily, Thais | HubSpot · Marvee · Proposta |
+| Liderança/Ops | Daniel Moraes (CFO), Danilo Yuzo (admin) | WhatsApp · HubSpot · Varredura (+ Trilha no admin) |
+| CS | Délete (csm) | Contexto · Trilha |
+| Estratégia | Juliana (dir. receitas), Sávio (revops) | Contexto |
+| Topo de funil | Thiago Rodrigues (sdr), Vanessa (social media), Yali (social seller) | Contexto |
+
+**Encaixe do Data Hub dentro do teto de ~15 tools:** não dá para ligar as 4 tools para todo mundo — closers já carregam 3 módulos. A proposta é dividir em **dois módulos pequenos**, no padrão liga/desliga do painel:
+
+| Módulo | Tools | Para quem ligar |
+|---|---|---|
+| **Jornada** | `jornada_do_cliente(email)` + `metricas_academy(periodo)` | Closers (só a 1ª tool), CS, liderança — preparação de call e acompanhamento pós-venda |
+| **Análises** | `consultar_sql(pergunta)` | CFO, dir. de receitas, revops, admin — perfil analítico; tool mais pesada de contexto, restrita a quem faz pergunta agregada |
+
+`buscar_semantico` **fica de fora por ora** — resolve a colisão de nome com a KB sem esforço, e só se torna necessária na Fase 3 (documentos), quando se decide entre renomear (`buscar_dados`) ou fundir com a da KB.
+
+Custo por pessoa: closers **+1 tool**, CS **+2**, perfis analíticos **+2 a +3**. Todos dentro do orçamento.
+
+**Nota para a pergunta 4 do Anexo D:** a regra da casa diz "módulo, nunca conector novo" — mas o painel mostra que o tipo **"Compartilhado" já existe como precedente** (KB Prosperus, Contexto Compartilhado). A recomendação continua sendo módulo (mantém provisionamento, rollback e read-only do painel de graça), mas o precedente vale ser citado na reunião de Fase 0.
+
