@@ -320,10 +320,12 @@ Não é contraproposta de arquitetura — é **reordenação por dependência e 
 
 ### Fase 0 — quatro decisões, antes de qualquer código
 
-- [ ] Eixo da `eventos_jornada`: funil comercial de 10 fases, ciclo de vida do CS de 11 marcos, ou os dois em colunas separadas
-- [ ] `clientes` persistida × montagem em runtime — e, se persistida, o resolvedor existente vira a fonte do `cliente_id`
-- [ ] Canal de WhatsApp: Cloud API, Evolution, ou híbrido com fronteira escrita
-- [ ] Destino da migration de 07/08 que já modela o log de eventos de jornada
+> **Direção definida em 13/08/2026** (responsável técnico; a referendar na reunião de alinhamento):
+
+- [x] **Eixo da `eventos_jornada`: opção C (os dois)** — o schema nasce com as duas colunas (`fase_funil` + `marco_cs`), mas o **preenchimento começa só pelo CS**; expansão em seguida para Marketing, Pré-Vendas e Vendas conforme as fontes entram
+- [x] **`clientes` persistida (opção B)** — com o resolvedor existente como fonte do `cliente_id`; a reversão da diretriz "sem store consolidado" fica registrada aqui
+- [x] **WhatsApp: híbrido com fronteira escrita** — Evolution para grupos e histórico; números de CS migram um a um para a Cloud API, com piloto de 30 dias
+- [x] **Migration de 07/08: opção A (aproveitar)** — ela entra como base e o schema do Data Hub **evolui a partir dela**, em vez de nascer do zero
 
 ### Fase 1 — o núcleo que só o Data Hub resolve
 
